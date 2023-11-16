@@ -1,3 +1,8 @@
 .idea/
 .vscode/
 *.out
+CMakeFiles/
+CMakeCache.txt
+build/
+cmake_install.cmake
+ctpmini
