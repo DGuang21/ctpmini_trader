@@ -1,12 +1,12 @@
 #include "include/ctpmini.h"
 
 int main() {
-  string address = "tcp://121.36.146.182:20002";
+  string address = "tcp://140.207.168.9:42205";
   string appid = "client_xtrader_2.9.1";
-  string authCode = "WWBAHC9SY8HCTGPH";
-  string brokerId = "8888";
-  string userId = "12345";
-  string password = "12345";
+  string authCode = "X4OC657YQ7S47R2I";
+  string brokerId = "1080";
+  string userId = "901208788";
+  string password = "qtwdsolang123";
 
   CTPMiniTrader *mApi = new CTPMiniTrader(address, appid, authCode, brokerId);
 
