@@ -1,2 +1,0 @@
-add_subdirectory(mdapi)
-add_subdirectory(traderapi)
