@@ -1,15 +1,19 @@
 #include "main.h"
 
 int main() {
-  string address = "222.66.74.18:21205";
-  string appid = "client_quantword_2.1";
-  string authCode = "WUQ2KS75AL33MX2X";
-  string brokerId = "8888";
-  string userId = "1234";
-  string password = "dlqh1552";
+  string address = "tcp://140.207.168.9:42205";
+  string appid = "client_xtrader_1.1";
+  string authCode = "X4OC657YQ7S47R2I";
+  string brokerId = "1080";
+  string userId = "901208788";
+  string password = "qtwdsolang123";
 
   CTPMiniTrader *mApi = new CTPMiniTrader(address, appid, authCode, brokerId);
-  mApi->ReqAuthenticate(userId,password);
+
+  cout << mApi->ReqAuthenticate(userId) << endl;
+  cout << mApi->ReqUserLogin(password) << endl;
+  cout << mApi->GetTradingDay() << endl;
+  mApi->ReqUserLogout();
 
   return 0;
 }
