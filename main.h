@@ -5,8 +5,8 @@
 #include "iostream"
 using namespace std;
 
-class CTMMiniSpi : public CThostFtdcTraderSpi {
-  ///当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
+class CTPMiniSpi : public CThostFtdcTraderSpi {
+  /// 当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
   void OnFrontConnected() { cout << "OnFrontConnected" << endl; };
 
   ///当客户端与交易后台通信连接断开时，该方法被调用。当发生这个情况后，API会自动重新连接，客户端可不做处理。
@@ -19,13 +19,13 @@ class CTMMiniSpi : public CThostFtdcTraderSpi {
   ///        -8	读心跳出错
   ///        -9	错误的网络包大小
   void OnFrontDisconnected(int nReason) {
-    cout << "OnFrontDisconnected" << endl;
+    cout << "OnFrontDisconnected" << nReason << endl;
   };
 
   ///心跳超时警告。当长时间未收到报文时，该方法被调用。
   ///@param nTimeLapse 距离上次接收报文的时间
   void OnHeartBeatWarning(int nTimeLapse) {
-    cout << "OnHeartBeatWarning" << endl;
+    cout << "OnHeartBeatWarning" << nTimeLapse << endl;
   };
 
   ///订阅流控警告应答
@@ -79,23 +79,22 @@ class CTPMiniTrader {
   string brokerId;
   string userId;
   CThostFtdcTraderApi *userApi;
-  CTMMiniSpi *userSpi;
 
  public:
   CTPMiniTrader(string address, string appId, string authCode, string brokerId)
-      : address(address),
-        appId(appId),
-        authCode(authCode),
-        brokerId(brokerId),
-        userApi(CThostFtdcTraderApi::CreateFtdcTraderApi()) {
+      : address(address), appId(appId), authCode(authCode), brokerId(brokerId) {
     cout << "ctp mini init, api version: "
          << CThostFtdcTraderApi::GetApiVersion() << endl;
-    this->userSpi = new CTMMiniSpi();
-    this->userApi->RegisterSpi(this->userSpi);
+    CThostFtdcTraderApi *userApi =
+        CThostFtdcTraderApi::CreateFtdcTraderApi("./flow");
+    CTPMiniSpi *userSpi = new CTPMiniSpi();
+
+    this->userApi = userApi;
+    this->userApi->RegisterSpi(userSpi);
     this->userApi->SubscribePrivateTopic(THOST_TERT_QUICK);
     this->userApi->SubscribePublicTopic(THOST_TERT_RESTART);
     this->userApi->RegisterFront((char *)this->address.c_str());
-    this->userApi->Init(true);
+    this->userApi->Init();
     return;
   };
   ~CTPMiniTrader() {
@@ -118,8 +117,9 @@ class CTPMiniTrader {
 
   // 客户端认证
   int ReqAuthenticate(string userId) {
-    return this->userApi->ReqAuthenticate(this->getAuthRequest(userId).get(),
-                                          this->request++);
+    int res = this->userApi->ReqAuthenticate(this->getAuthRequest(userId).get(),
+                                             this->request++);
+    return res;
   }
 
   // 用户登录
