@@ -16,7 +16,8 @@ message(STATUS "CMAKE_CXX_FLAGS: " "${CMAKE_CXX_FLAGS}")
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/include)
-link_directories(${PROJECT_SOURCE_DIR}/lib)
+include_directories(${PROJECT_SOURCE_DIR}/lib)
+link_directories(${PROJECT_SOURCE_DIR}/include)
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)

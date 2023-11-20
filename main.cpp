@@ -1,4 +1,4 @@
-#include "main.h"
+#include "lib/ctpmini/ctpmini.h"
 
 int main() {
   string address = "tcp://121.36.146.182:20002";
