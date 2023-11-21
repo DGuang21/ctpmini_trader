@@ -9,61 +9,47 @@ class CTPMiniSpi : public CThostFtdcTraderSpi {
   /// 当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
   void OnFrontConnected() { cout << "OnFrontConnected" << endl; };
 
-  ///当客户端与交易后台通信连接断开时，该方法被调用。当发生这个情况后，API会自动重新连接，客户端可不做处理。
+  /// 当客户端与交易后台通信连接断开时，该方法被调用。当发生这个情况后，API会自动重新连接，客户端可不做处理。
   ///@param nReason 错误原因
-  ///        -3	关闭连接
-  ///        -4	网络读失败
-  ///        -5	网络写失败
-  ///        -6	读订阅流水请求出错
-  ///        -7	序列号错误
-  ///        -8	读心跳出错
-  ///        -9	错误的网络包大小
+  ///         -3	关闭连接
+  ///         -4	网络读失败
+  ///         -5	网络写失败
+  ///         -6	读订阅流水请求出错
+  ///         -7	序列号错误
+  ///         -8	读心跳出错
+  ///         -9	错误的网络包大小
   void OnFrontDisconnected(int nReason) {
     cout << "OnFrontDisconnected" << nReason << endl;
   };
 
-  ///心跳超时警告。当长时间未收到报文时，该方法被调用。
+  /// 心跳超时警告。当长时间未收到报文时，该方法被调用。
   ///@param nTimeLapse 距离上次接收报文的时间
   void OnHeartBeatWarning(int nTimeLapse) {
     cout << "OnHeartBeatWarning" << nTimeLapse << endl;
   };
 
-  ///订阅流控警告应答
-  void OnRspSubscribeFlowCtrlWarning(
-      CThostFtdcSpecificTraderField *pRspSubscribeTraderField,
-      CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
-    cout << "OnRspSubscribeFlowCtrlWarning" << endl;
-  };
-
-  ///取消订阅流控警告应答
-  void OnRspUnSubscribeFlowCtrlWarning(
-      CThostFtdcSpecificTraderField *pRspSubscribeTraderField,
-      CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
-    cout << "OnRspUnSubscribeFlowCtrlWarning" << endl;
-  };
-
-  ///客户端认证响应
+  /// 客户端认证响应
   void OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField,
                          CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                          bool bIsLast) {
     cout << "OnRspAuthenticate" << endl;
   };
 
-  ///登录请求响应
+  /// 登录请求响应
   void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                       CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                       bool bIsLast) {
     cout << "OnRspUserLogin" << endl;
   };
 
-  ///登出请求响应
+  /// 登出请求响应
   void OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout,
                        CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                        bool bIsLast) {
     cout << "OnRspUserLogout" << endl;
   };
 
-  ///错误应答
+  /// 错误应答
   void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                   bool bIsLast) {
     cout << "OnRspError" << endl;
@@ -127,6 +113,8 @@ class CTPMiniTrader {
     return this->userApi->ReqUserLogin(
         this->getUserLoginReqeust(userId, password).get(), this->request++);
   }
+
+  void Join() { this->userApi->Join(); }
 
  private:
   // 生成退出登录结构体
