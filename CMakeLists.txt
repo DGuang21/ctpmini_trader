@@ -25,5 +25,6 @@ if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif(CCACHE_FOUND)
 
-add_executable(ctpmini main.cpp)
+file(GLOB_RECURSE SOURCES "include/*.cpp")
+add_executable(ctpmini main.cpp ${SOURCES})
 target_link_libraries(ctpmini thostmduserapi thosttraderapi)

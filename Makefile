@@ -142,6 +142,33 @@ ctpmini/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ctpmini.dir/build.make CMakeFiles/ctpmini.dir/build
 .PHONY : ctpmini/fast
 
+include/ctpmini.o: include/ctpmini.cpp.o
+
+.PHONY : include/ctpmini.o
+
+# target to build an object file
+include/ctpmini.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ctpmini.dir/build.make CMakeFiles/ctpmini.dir/include/ctpmini.cpp.o
+.PHONY : include/ctpmini.cpp.o
+
+include/ctpmini.i: include/ctpmini.cpp.i
+
+.PHONY : include/ctpmini.i
+
+# target to preprocess a source file
+include/ctpmini.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ctpmini.dir/build.make CMakeFiles/ctpmini.dir/include/ctpmini.cpp.i
+.PHONY : include/ctpmini.cpp.i
+
+include/ctpmini.s: include/ctpmini.cpp.s
+
+.PHONY : include/ctpmini.s
+
+# target to generate assembly for a file
+include/ctpmini.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ctpmini.dir/build.make CMakeFiles/ctpmini.dir/include/ctpmini.cpp.s
+.PHONY : include/ctpmini.cpp.s
+
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -178,6 +205,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... ctpmini"
+	@echo "... include/ctpmini.o"
+	@echo "... include/ctpmini.i"
+	@echo "... include/ctpmini.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
