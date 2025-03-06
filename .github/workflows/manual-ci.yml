@@ -10,8 +10,14 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    # 关键权限配置（必须添加）
+    permissions:
+      checks: write      # 允许创建和更新 Check Run
+      pull-requests: write  # 允许关联到 PR
+      contents: read     # 允许检出代码（尤其是 fork 仓库的 PR）
+
     steps:
-      # 步骤 1：通过 GitHub API 获取 PR 详细信息（使用正确语法）
+      # 步骤 1：获取 PR 的 SHA 和分支信息
       - name: Fetch PR Details
         id: fetch-pr
         uses: actions/github-script@v6
@@ -22,17 +28,30 @@ jobs:
               repo: context.repo.repo,
               pull_number: ${{ inputs.pr_number }},
             });
-            // 将结果直接写入步骤输出
             core.setOutput('sha', pr.data.head.sha);
             core.setOutput('branch', pr.data.head.ref);
 
-      # 步骤 2：使用步骤输出中的 SHA 检出代码
+      # 步骤 2：创建初始 Check Run（状态为 in_progress）
+      - name: Start CI Check
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Manual CI Check',  # 必须与规则集的状态检查名称一致
+              head_sha: '${{ steps.fetch-pr.outputs.sha }}',
+              status: 'in_progress',
+            });
+
+      # 步骤 3：检出代码（处理 fork 仓库）
       - name: Checkout PR Code
         uses: actions/checkout@v3
         with:
           ref: ${{ steps.fetch-pr.outputs.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}  # 显式传递 token 以支持 fork 仓库
 
-      # 后续步骤保持不变
+      # 步骤 4：模拟 CI 流程
       - name: Setup environment
         run: echo "Setting up environment"
       
@@ -41,3 +60,17 @@ jobs:
       
       - name: Run tests
         run: echo "Running tests"
+
+      # 步骤 5：更新 Check Run 状态为成功/失败
+      - name: Complete CI Check
+        if: always()  # 无论前面步骤是否失败都执行
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: ${{ github.run_id }},  # 使用当前运行的 ID
+              conclusion: job.status == 'success' ? 'success' : 'failure',
+              completed_at: new Date().toISOString(),
+            });
