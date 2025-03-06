@@ -1,26 +1,43 @@
-name: Manual CI Workflow
+name: Manual PR CI
 
 on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR Number to run CI on'
+        description: 'PR Number'
         required: true
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Fetch PR Details
+        id: fetch-pr
+        uses: actions/github-script@v6
         with:
-          ref: refs/pull/${{ github.event.inputs.pr_number }}/merge
-          
-      # 这里添加你的CI步骤
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ inputs.pr_number }},
+            });
+            return { 
+              sha: pr.data.head.sha, 
+              branch: pr.data.head.ref 
+            };
+          result-json: pr_info
+
+      - name: Checkout PR Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ fromJSON(steps.fetch-pr.outputs.result).sha }}
+
+      # 后续步骤保持不变
       - name: Setup environment
         run: echo "Setting up environment"
-        
+      
       - name: Build
         run: echo "Building project"
-        
+      
       - name: Run tests
         run: echo "Running tests"
