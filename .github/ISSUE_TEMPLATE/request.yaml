@@ -2,7 +2,6 @@ name: Feature Request
 description: File a feature request.
 title: '[Feature Request]: '
 labels: ['feature', 'triage']
-blank_issues_enabled: false
 assignees:
   - dguang21
 body:
