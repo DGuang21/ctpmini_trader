@@ -11,6 +11,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
+      # 步骤 1：通过 GitHub API 获取 PR 详细信息（使用正确语法）
       - name: Fetch PR Details
         id: fetch-pr
         uses: actions/github-script@v6
@@ -21,16 +22,15 @@ jobs:
               repo: context.repo.repo,
               pull_number: ${{ inputs.pr_number }},
             });
-            return { 
-              sha: pr.data.head.sha, 
-              branch: pr.data.head.ref 
-            };
-          result-json: pr_info
+            // 将结果直接写入步骤输出
+            core.setOutput('sha', pr.data.head.sha);
+            core.setOutput('branch', pr.data.head.ref);
 
+      # 步骤 2：使用步骤输出中的 SHA 检出代码
       - name: Checkout PR Code
         uses: actions/checkout@v3
         with:
-          ref: ${{ fromJSON(steps.fetch-pr.outputs.result).sha }}
+          ref: ${{ steps.fetch-pr.outputs.sha }}
 
       # 后续步骤保持不变
       - name: Setup environment
