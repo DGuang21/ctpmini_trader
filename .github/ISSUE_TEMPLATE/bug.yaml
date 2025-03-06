@@ -2,7 +2,6 @@ name: Bug Report
 description: File a bug report.
 title: '[Bug Report]: '
 labels: ['bug', 'triage']
-blank_issues_enabled: false
 assignees:
   - dguang21
 body:
