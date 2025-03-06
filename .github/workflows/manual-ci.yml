@@ -1,7 +1,6 @@
 name: Auto PR CI
 
 on:
-  # PR 触发事件
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -9,18 +8,22 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      # 检出代码
       - name: Checkout PR Code
         uses: actions/checkout@v3
-      
-      # 假设置环境
+
       - name: Setup environment
-        run: echo "Setting up environment"
-      
-      # 假构建
+        run: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Run linters
+        uses: wearerequired/lint-action@v2
+        with:
+          eslint: true
+          prettier: true
+
       - name: Build
-        run: echo "Building project"
-      
-      # 假测试
+        run: pnpm build
+
       - name: Run tests
-        run: echo "Running tests"
+        run: pnpm test
