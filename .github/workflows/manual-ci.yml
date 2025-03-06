@@ -1,11 +1,9 @@
-name: Manual PR CI
+name: Auto PR CI
 
 on:
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: 'PR Number'
-        required: true
+  # 只保留 PR 触发事件
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   build-and-test:
@@ -14,21 +12,20 @@ jobs:
       checks: write
       pull-requests: write
       contents: read
-
     steps:
-      # 步骤1：获取 PR 的 SHA
-      - name: Fetch PR SHA
-        id: fetch-pr
+      # 步骤1：获取 PR 信息
+      - name: Get PR Info
+        id: pr-info
         uses: actions/github-script@v6
         with:
           script: |
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: ${{ inputs.pr_number }},
-            });
-            core.setOutput('sha', pr.data.head.sha);
-
+            // PR 事件触发，直接获取相关信息
+            const sha = context.payload.pull_request.head.sha;
+            const prNumber = context.payload.pull_request.number;
+            
+            core.setOutput('sha', sha);
+            core.setOutput('pr_number', prNumber);
+            
       # 步骤2：创建 Check Run 并保存其 ID
       - name: Start CI Check
         id: create-check
@@ -38,39 +35,102 @@ jobs:
             const response = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'Manual CI Check',
-              head_sha: '${{ steps.fetch-pr.outputs.sha }}',
+              name: 'PR CI Check',
+              head_sha: '${{ steps.pr-info.outputs.sha }}',
               status: 'in_progress',
+              output: {
+                title: 'CI Check Running',
+                summary: 'The CI process is currently running.',
+                text: 'Checking PR #${{ steps.pr-info.outputs.pr_number }}'
+              }
             });
-            core.setOutput('check_run_id', response.data.id);  # 保存 Check Run ID
+            core.setOutput('check_run_id', response.data.id);
 
       # 步骤3：检出代码
       - name: Checkout PR Code
         uses: actions/checkout@v3
         with:
-          ref: ${{ steps.fetch-pr.outputs.sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ steps.pr-info.outputs.sha }}
+          fetch-depth: 0  # 获取完整历史以支持更多类型的测试
 
-      # 步骤4：模拟 CI 流程
+      # 步骤4：设置构建环境
       - name: Setup environment
         run: echo "Setting up environment"
       
+      # 步骤5：构建项目
       - name: Build
+        id: build
         run: echo "Building project"
+        # 如果构建失败，记录结果
+        continue-on-error: true
       
+      # 步骤6：运行测试
       - name: Run tests
+        id: tests
+        # 即使构建步骤失败，也尝试运行测试
+        if: always()
         run: echo "Running tests"
-
-      # 步骤5：使用保存的 Check Run ID 更新状态
-      - name: Complete CI Check
+        continue-on-error: true
+      
+      # 步骤7：汇总结果并更新 Check Run
+      - name: Update CI Check
         if: always()
         uses: actions/github-script@v6
         with:
           script: |
+            const buildSuccess = '${{ steps.build.outcome }}' === 'success';
+            const testsSuccess = '${{ steps.tests.outcome }}' === 'success';
+            const overallSuccess = buildSuccess && testsSuccess;
+            
+            let summary = '';
+            if (!buildSuccess) {
+              summary += '❌ 构建失败\n';
+            } else {
+              summary += '✅ 构建成功\n';
+            }
+            
+            if (!testsSuccess) {
+              summary += '❌ 测试失败\n';
+            } else {
+              summary += '✅ 测试通过\n';
+            }
+            
             await github.rest.checks.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              check_run_id: ${{ steps.create-check.outputs.check_run_id }},  # 使用正确的 Check Run ID
-              conclusion: job.status == 'success' ? 'success' : 'failure',
+              check_run_id: ${{ steps.create-check.outputs.check_run_id }},
+              status: 'completed',
+              conclusion: overallSuccess ? 'success' : 'failure',
               completed_at: new Date().toISOString(),
+              output: {
+                title: overallSuccess ? 'CI 检查通过' : 'CI 检查失败',
+                summary: summary,
+                text: '详细的构建和测试日志可在 Actions 中查看'
+              }
+            });
+      
+      # 步骤8：添加评论到 PR
+      - name: Comment on PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const buildSuccess = '${{ steps.build.outcome }}' === 'success';
+            const testsSuccess = '${{ steps.tests.outcome }}' === 'success';
+            const overallSuccess = buildSuccess && testsSuccess;
+            
+            let body = `## CI 检查结果\n\n`;
+            if (overallSuccess) {
+              body += `✅ 所有检查通过!\n`;
+            } else {
+              body += `❌ 检查失败\n\n`;
+              if (!buildSuccess) body += `- 构建失败\n`;
+              if (!testsSuccess) body += `- 测试失败\n`;
+              body += `\n请查看 [详细日志](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            }
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
             });
