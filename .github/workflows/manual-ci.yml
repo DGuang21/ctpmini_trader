@@ -16,7 +16,7 @@ jobs:
       contents: read
 
     steps:
-      # 步骤1：获取 PR 的 SHA（修复变量引用）
+      # 步骤1：获取 PR 的 SHA
       - name: Fetch PR SHA
         id: fetch-pr
         uses: actions/github-script@v6
@@ -29,21 +29,22 @@ jobs:
             });
             core.setOutput('sha', pr.data.head.sha);
 
-      # 步骤2：创建 Check Run（修复字符串拼接）
+      # 步骤2：创建 Check Run 并保存其 ID
       - name: Start CI Check
+        id: create-check
         uses: actions/github-script@v6
         with:
           script: |
-            const sha = '${{ steps.fetch-pr.outputs.sha }}';  // 正确转义变量
-            await github.rest.checks.create({
+            const response = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: 'Manual CI Check',
-              head_sha: sha,
+              head_sha: '${{ steps.fetch-pr.outputs.sha }}',
               status: 'in_progress',
             });
+            core.setOutput('check_run_id', response.data.id);  # 保存 Check Run ID
 
-      # 步骤3：检出代码（处理 fork 仓库）
+      # 步骤3：检出代码
       - name: Checkout PR Code
         uses: actions/checkout@v3
         with:
@@ -60,19 +61,16 @@ jobs:
       - name: Run tests
         run: echo "Running tests"
 
-      # 步骤5：更新 Check Run（修复 conclusion 逻辑）
+      # 步骤5：使用保存的 Check Run ID 更新状态
       - name: Complete CI Check
         if: always()
         uses: actions/github-script@v6
         with:
           script: |
-            const conclusion = process.env.JOB_STATUS === 'success' ? 'success' : 'failure';
             await github.rest.checks.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              check_run_id: ${{ github.run_id }},
-              conclusion: conclusion,
+              check_run_id: ${{ steps.create-check.outputs.check_run_id }},  # 使用正确的 Check Run ID
+              conclusion: job.status == 'success' ? 'success' : 'failure',
               completed_at: new Date().toISOString(),
             });
-        env:
-          JOB_STATUS: ${{ job.status }}  # 正确传递作业状态
